@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#ffe9b8"><meta name="x5-fullscreen" content="true">
+<title>大富翁 · 糖果城</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23ffcf5a%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#ffe9b8;touch-action:manipulation;overscroll-behavior:none;color:#4a3320;font-family:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Helvetica,Arial,sans-serif}
+#app{height:100%;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#main{display:flex;flex-direction:column;align-items:center;width:100%;flex:1;min-height:0}
+#top{width:100%;display:flex;justify-content:space-between;align-items:center;padding:4px 10px;font-weight:800;font-size:14px;min-height:30px}
+#top .pill{background:#fff;border-radius:14px;padding:3px 10px;box-shadow:0 2px 0 #e8c98a}
+#bw{position:relative;flex:none}
+canvas#bd{display:block;border-radius:16px;box-shadow:0 4px 0 #d9b56d,0 8px 18px #0003;touch-action:none}
+#banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fffbe8f2;border:3px solid #ffb84a;border-radius:16px;padding:8px 14px;font-weight:800;font-size:15px;text-align:center;max-width:78%;pointer-events:none;opacity:0;transition:opacity .2s;z-index:3}
+#banner.on{opacity:1}
+#panel{width:100%;max-width:520px;flex:1;min-height:0;display:flex;flex-direction:column;padding:4px 8px 0;gap:5px}
+#players{display:flex;gap:5px}
+.pc{flex:1;min-width:0;background:#fff;border-radius:12px;padding:4px 5px;display:flex;align-items:center;gap:4px;border:3px solid transparent;box-shadow:0 2px 0 #e8c98a}
+.pc.cur{border-color:var(--c);transform:translateY(-2px)}
+.pc.out{opacity:.35;filter:grayscale(1)}
+.pc canvas{width:34px;height:34px;flex:none}
+.pc .i{min-width:0;font-size:11px;line-height:1.25;font-weight:700}
+.pc .i b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#log{background:#fff9;border-radius:10px;padding:3px 8px;font-size:12px;line-height:1.35;height:52px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+#log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#log div:last-child{font-weight:800}
+#btns{display:flex;gap:8px}
+.btn{font:inherit;font-weight:900;font-size:19px;border:0;border-radius:18px;min-height:54px;padding:0 14px;color:#fff;background:linear-gradient(#ff7a5c,#ee4a3a);box-shadow:0 4px 0 #b63426;cursor:pointer;flex:1}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #b63426}
+.btn.alt{background:linear-gradient(#5cc8ff,#2f9be8);box-shadow:0 4px 0 #1f6fae;flex:none;min-width:84px}
+.btn.alt:active{box-shadow:0 1px 0 #1f6fae}
+.btn.gy{background:linear-gradient(#c9bda9,#a89a82);box-shadow:0 4px 0 #7d715d}
+.btn[disabled]{opacity:.45;pointer-events:none}
+#foot{font-size:10px;opacity:.6;text-align:center;padding:2px 0 3px;width:100%}
+#modal{position:fixed;inset:0;background:#2a180a88;display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+#modal.hide{display:none}
+.mbox{background:#fffaf0;border:4px solid #ffb84a;border-radius:22px;padding:16px;width:100%;max-width:380px;text-align:center;box-shadow:0 8px 0 #c98a2c;max-height:92%;overflow:auto}
+.mbox h2{margin:0 0 6px;font-size:22px}
+.mbox .em{font-size:52px;line-height:1.1}
+.mbox p{margin:6px 0 12px;font-size:15px;line-height:1.5}
+.mbox .bs{display:flex;gap:8px;flex-wrap:wrap}
+.mbox .bs .btn{min-width:40%;font-size:17px}
+.chs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.chc{border:3px solid #eadfc9;background:#fff;border-radius:14px;padding:6px;font-weight:800;font-size:14px;cursor:pointer}
+.chc.sel{border-color:#ff7a5c;background:#fff1ea}
+.chc canvas{width:64px;height:64px;display:block;margin:0 auto}
+.seg{display:flex;gap:6px;margin:6px 0 12px}
+.seg .chc{flex:1;padding:10px 0;font-size:16px}
+.num{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.num .btn{min-width:0;font-size:18px;min-height:48px}
+.row{display:flex;align-items:center;gap:8px;text-align:left;padding:6px;background:#fff;border-radius:12px;margin-bottom:6px;font-size:13px}
+.row .e{font-size:28px}
+.row .t{flex:1}
+.row .btn{flex:none;min-width:64px;min-height:44px;font-size:15px;padding:0 10px}
+@media (min-width:860px) and (orientation:landscape){
+  #main{flex-direction:row;justify-content:center;gap:16px;align-items:center}
+  #left{display:flex;flex-direction:column;align-items:center}
+  #panel{max-width:360px;flex:none;height:auto}
+}
+</style></head><body>
+<div id="app"><div id="main"><div id="left"><div id="top"><span class="pill" id="rd">第 1 回合</span><span class="pill" id="tn">&nbsp;</span></div>
+<div id="bw"><canvas id="bd"></canvas><div id="banner"></div></div></div>
+<div id="panel"><div id="players"></div><div id="log"></div>
+<div id="btns"><button class="btn" id="bRoll">🎲 掷骰子</button><button class="btn alt" id="bItem">🎒 道具</button><button class="btn alt gy" id="bAuto" style="min-width:70px;font-size:15px">🤖托管</button></div>
+<div id="foot">灵感来自《大富翁4》 · 全部美术与代码为原创 · 仅供娱乐</div></div></div></div>
+<div id="modal"><div class="mbox" id="mbox"></div></div>
+<script>
+(function(){
+"use strict";
+var $=function(i){return document.getElementById(i)};
+var cv=$('bd'),ctx=cv.getContext('2d');
+var SP={v:1},turbo=false,sleepN=0;
+function sleep(ms){if(turbo){if(++sleepN%40===0)return new Promise(function(r){setTimeout(r,0)});return Promise.resolve()}return new Promise(function(r){setTimeout(r,ms/SP.v)})}
+function rnd(n){return Math.floor(Math.random()*n)}
+var LS={g:function(k){try{return localStorage.getItem(k)}catch(e){return null}},s:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* ---------- data ---------- */
+var CH=[
+ {n:'小美',hair:'#ff7eb6',style:'bob',outfit:'#ff5c93',color:'#ff5c93',res:1500},
+ {n:'糖糖',hair:'#ffa21f',style:'twin',outfit:'#ffb347',color:'#ff9f1c',res:600},
+ {n:'阿呆',hair:'#2f55d6',style:'cap',outfit:'#3b8bff',color:'#3b8bff',res:2200},
+ {n:'噗噗',hair:'#8a6a58',style:'bear',outfit:'#3ecf8e',color:'#2fbf71',res:1200}];
+var GC=['#7bd88f','#ff9ec7','#7ad7f0','#9b8cff','#ffb86b','#4fb3ff','#ffd23f'];
+var T=[];
+(function(){
+  var sp={0:['起点','start','🏁'],2:['机会','chance','❓'],4:['银行','bank','🏦'],6:['彩票站','lottery','🎫'],7:['医院','hospital','🏥'],9:['命运','fate','🎴'],11:['道具店','shop','🛍️'],13:['税务局','tax','🧾'],14:['公园','park','🎡'],16:['机会','chance','❓'],18:['命运','fate','🎴'],21:['监狱','jail','🚔'],23:['机会','chance','❓'],25:['命运','fate','🎴']};
+  var pr={1:['竹林街',600,0],3:['梅花路',700,0],5:['桃花坊',900,1],8:['樱花道',1000,1],10:['荷塘巷',1200,2],12:['月光路',1300,2],15:['星空街',1500,3],17:['彩虹桥',1600,3],19:['糖果屋',1900,4],20:['云朵路',2000,4],22:['海岸线',2300,5],24:['珊瑚街',2400,5],26:['金色道',2800,6],27:['钻石场',3000,6]};
+  for(var i=0;i<28;i++){
+    if(sp[i])T.push({n:sp[i][0],t:sp[i][1],e:sp[i][2]});
+    else T.push({n:pr[i][0],t:'prop',p:pr[i][1],g:pr[i][2],owner:-1,lv:0});
+  }
+})();
+var RATE=[.2,.5,1.0,2.0],LVN=['空地','小屋','洋房','大厦'],LVE=['🟩','🏠','🏡','🏨'];
+var ITEMS={dice:{e:'🎲',n:'遥控骰',d:'指定下次前进的点数(2-12)',price:800},shield:{e:'🛡️',n:'免费通行',d:'自动免付一次过路费',price:600},free:{e:'🔓',n:'出狱卡',d:'自动离开监狱/医院',price:500},rob:{e:'💰',n:'抢钱卡',d:'抢走一位对手 ¥800',price:700},upg:{e:'⬆️',n:'升级券',d:'免费升级一处地产',price:900}};
+var IK=Object.keys(ITEMS);
+function cell(i){if(i<=7)return{x:i,y:0};if(i<=13)return{x:7,y:i-7};if(i<=21)return{x:7-(i-14),y:7};return{x:0,y:7-(i-21)}}
+function cost(t){return Math.round(t.p*.5/50)*50}
+function toll(t){var v=Math.round(t.p*RATE[t.lv]/10)*10;if(mono(t))v=Math.round(v*1.5/10)*10;return v}
+function mono(t){if(t.owner<0)return false;for(var i=0;i<28;i++){var u=T[i];if(u.t==='prop'&&u.g===t.g&&u.owner!==t.owner)return false}return true}
+function worth(p){var w=p.money;for(var i=0;i<28;i++){var t=T[i];if(t.t==='prop'&&t.owner===p.id)w+=t.p+t.lv*cost(t)}return w}
+function props(p){return T.filter(function(t){return t.t==='prop'&&t.owner===p.id})}
+function fmt(n){return '¥'+n}
+
+/* ---------- chibi art (original, canvas) ---------- */
+function ell(c,x,y,rx,ry,col){c.fillStyle=col;c.beginPath();c.ellipse(x,y,rx,ry,0,0,7);c.fill()}
+function chibi(c,x,y,s,ch,blink){
+  var r=s*.33,hy=y-s*.6;
+  ell(c,x,y,s*.3,s*.075,'rgba(60,30,0,.22)');
+  // body
+  c.fillStyle=ch.outfit;c.beginPath();if(c.roundRect)c.roundRect(x-s*.19,y-s*.4,s*.38,s*.32,s*.1);else c.rect(x-s*.19,y-s*.4,s*.38,s*.32);c.fill();
+  c.fillStyle='rgba(255,255,255,.35)';c.fillRect(x-s*.19,y-s*.28,s*.38,s*.05);
+  ell(c,x-s*.12,y-s*.05,s*.09,s*.055,'#5b3a29');ell(c,x+s*.12,y-s*.05,s*.09,s*.055,'#5b3a29');
+  ell(c,x-s*.23,y-s*.28,s*.06,s*.07,'#ffe0c2');ell(c,x+s*.23,y-s*.28,s*.06,s*.07,'#ffe0c2');
+  var st=ch.style;
+  // hair behind / accessories behind
+  c.fillStyle=ch.hair;
+  if(st==='bob'){c.beginPath();c.arc(x,hy+r*.1,r*1.12,0,7);c.fill()}
+  if(st==='twin'){ell(c,x-r*1.12,hy+r*.55,r*.38,r*.7,ch.hair);ell(c,x+r*1.12,hy+r*.55,r*.38,r*.7,ch.hair);c.beginPath();c.arc(x,hy,r*1.06,0,7);c.fill()}
+  if(st==='bear'){ell(c,x-r*.82,hy-r*.85,r*.36,r*.36,ch.hair);ell(c,x+r*.82,hy-r*.85,r*.36,r*.36,ch.hair);ell(c,x-r*.82,hy-r*.85,r*.2,r*.2,'#f3b9a8');ell(c,x+r*.82,hy-r*.85,r*.2,r*.2,'#f3b9a8')}
+  // face
+  var fg=c.createRadialGradient(x-r*.2,hy-r*.2,r*.1,x,hy,r);fg.addColorStop(0,'#fff0e0');fg.addColorStop(1,'#ffd9b8');
+  c.fillStyle=fg;c.beginPath();c.arc(x,hy,r,0,7);c.fill();
+  // hair front
+  c.fillStyle=ch.hair;
+  if(st==='cap'){
+    c.beginPath();c.arc(x,hy-r*.12,r*1.04,Math.PI,0);c.lineTo(x+r*1.04,hy-r*.12);c.closePath();c.fill();
+    c.fillStyle='#ffd23f';c.beginPath();c.ellipse(x+r*.35,hy-r*.12,r*.95,r*.2,0,0,Math.PI);c.fill();
+    c.fillStyle='#fff';c.beginPath();c.arc(x,hy-r*.62,r*.16,0,7);c.fill();
+  }else if(st==='bear'){
+    c.beginPath();c.arc(x,hy-r*.1,r*1.02,Math.PI*1.02,Math.PI*1.98);c.quadraticCurveTo(x+r*.4,hy-r*.45,x,hy-r*.35);c.quadraticCurveTo(x-r*.5,hy-r*.5,x-r*1.0,hy-r*.2);c.fill();
+  }else{
+    c.beginPath();c.arc(x,hy,r*1.04,Math.PI*1.0,Math.PI*2.0);
+    c.lineTo(x+r*1.0,hy-r*.05);c.quadraticCurveTo(x+r*.7,hy-r*.55,x+r*.35,hy-r*.25);c.quadraticCurveTo(x+r*.1,hy-r*.6,x-r*.2,hy-r*.25);c.quadraticCurveTo(x-r*.6,hy-r*.6,x-r*1.0,hy-r*.05);c.fill();
+    if(st==='bob'){ell(c,x-r*.98,hy+r*.35,r*.2,r*.55,ch.hair);ell(c,x+r*.98,hy+r*.35,r*.2,r*.55,ch.hair);
+      c.fillStyle='#fff';c.beginPath();c.moveTo(x+r*.62,hy-r*.78);c.lineTo(x+r*1.0,hy-r*.95);c.lineTo(x+r*.95,hy-r*.5);c.closePath();c.fill();c.beginPath();c.moveTo(x+r*.62,hy-r*.78);c.lineTo(x+r*.25,hy-r*1.0);c.lineTo(x+r*.3,hy-r*.55);c.closePath();c.fill();ell(c,x+r*.62,hy-r*.78,r*.1,r*.1,'#ff5c93')}
+    if(st==='twin'){ell(c,x-r*.92,hy-r*.3,r*.2,r*.2,'#ff5c93');ell(c,x+r*.92,hy-r*.3,r*.2,r*.2,'#ff5c93')}
+  }
+  // eyes
+  var ey=hy+r*.12,ex=r*.42;
+  if(blink){c.strokeStyle='#3a2416';c.lineWidth=Math.max(1,s*.02);c.beginPath();c.arc(x-ex,ey,r*.14,.1,Math.PI-.1);c.stroke();c.beginPath();c.arc(x+ex,ey,r*.14,.1,Math.PI-.1);c.stroke()}
+  else{ell(c,x-ex,ey,r*.14,r*.2,'#3a2416');ell(c,x+ex,ey,r*.14,r*.2,'#3a2416');ell(c,x-ex+r*.05,ey-r*.07,r*.055,r*.07,'#fff');ell(c,x+ex+r*.05,ey-r*.07,r*.055,r*.07,'#fff')}
+  ell(c,x-r*.7,ey+r*.3,r*.17,r*.1,'rgba(255,110,130,.55)');ell(c,x+r*.7,ey+r*.3,r*.17,r*.1,'rgba(255,110,130,.55)');
+  c.strokeStyle='#a2492f';c.lineWidth=Math.max(1,s*.022);c.lineCap='round';c.beginPath();c.arc(x,ey+r*.3,r*.16,.15,Math.PI-.15);c.stroke();
+}
+function avatar(cn,ch,px){var d=cn.width=px*2,c=cn.getContext('2d');cn.height=d;c.clearRect(0,0,d,d);chibi(c,d/2,d*.94,d*.95,ch)}
+
+/* ---------- state ---------- */
+var G=null,W=0,H=0,B=0,CS=0,anims=[],floats=[],dice={v:[1,1],rolling:false,t0:0};
+function tween(d,fn){if(turbo||d<=0){fn(1);return Promise.resolve()}return new Promise(function(res){anims.push({t0:performance.now(),d:d/SP.v,fn:fn,res:res})})}
+function log(t){G.log.push(t);if(G.log.length>30)G.log.shift();var el=$('log');el.innerHTML='';G.log.slice(-3).forEach(function(s){var d=document.createElement('div');d.textContent=s;el.appendChild(d)})}
+var bt=null;
+function banner(t,ms){var b=$('banner');b.textContent=t;b.classList.add('on');if(turbo)return Promise.resolve();return sleep(ms||1100).then(function(){b.classList.remove('on')})}
+function floatText(p,t,col){floats.push({x:p.dx,y:p.dy,t:t,c:col||'#e8442f',t0:performance.now()})}
+function ask(title,em,body,btns){
+  return new Promise(function(res){
+    var m=$('mbox');m.innerHTML='';
+    if(title){var h=document.createElement('h2');h.textContent=title;m.appendChild(h)}
+    if(em){var e=document.createElement('div');e.className='em';e.textContent=em;m.appendChild(e)}
+    if(body){var p=document.createElement('p');p.innerHTML=body;m.appendChild(p)}
+    var bs=document.createElement('div');bs.className='bs';
+    btns.forEach(function(b){var x=document.createElement('button');x.className='btn'+(b.cls?' '+b.cls:'');x.textContent=b.t;x.onclick=function(){$('modal').classList.add('hide');res(b.v)};bs.appendChild(x)});
+    m.appendChild(bs);$('modal').classList.remove('hide');
+    G.pendingModal=function(v){$('modal').classList.add('hide');res(v)};
+  });
+}
+function humanCtl(p){return p.human&&!G.auto}
+
+/* ---------- UI ---------- */
+function updateUI(){
+  if(!G)return;
+  $('rd').textContent='第 '+Math.min(G.round,G.limit||40)+' / '+(G.limit||40)+' 回合';
+  var cp=G.players[G.cur];$('tn').textContent=cp?(cp.name+' 的回合'):'';
+  var box=$('players');
+  if(box.children.length!==G.players.length){box.innerHTML='';G.players.forEach(function(p){var d=document.createElement('div');d.className='pc';d.style.setProperty('--c',p.color);d.innerHTML='<canvas></canvas><div class="i"><b></b><span></span></div>';box.appendChild(d);avatar(d.firstChild,p,34)})}
+  G.players.forEach(function(p,i){var d=box.children[i];d.className='pc'+(i===G.cur?' cur':'')+(p.bankrupt?' out':'');
+    d.querySelector('b').textContent=p.name+(p.human?'(你)':'');
+    d.querySelector('span').textContent=fmt(p.money)+' 🏠'+props(p).length+(p.skip>0?' '+(p.jail?'⛓':'🏥'):'')+(p.items.length?' 🎒'+p.items.length:'')});
+}
+function layout(){
+  var vw=window.innerWidth,vh=window.innerHeight,land=vw>=860&&vw>vh;
+  W=vw;H=vh;
+  B=land?Math.min(vh-80,vw-420):Math.min(vw-8,vh-285,560);
+  B=Math.max(240,Math.floor(B));
+  var dpr=Math.min(window.devicePixelRatio||1,3);
+  cv.style.width=B+'px';cv.style.height=B+'px';cv.width=Math.round(B*dpr);cv.height=Math.round(B*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);CS=B/8;
+  $('bw').style.width=B+'px';$('bw').style.height=B+'px';
+}
+window.addEventListener('resize',layout);window.addEventListener('orientationchange',function(){setTimeout(layout,250)});
+['gesturestart','gesturechange','contextmenu'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()})});
+document.addEventListener('touchmove',function(e){if(e.target.closest&&e.target.closest('.mbox'))return;e.preventDefault()},{passive:false});
+
+/* ---------- drawing ---------- */
+function rr(c,x,y,w,h,r){c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h)}
+var TCOL={start:'#ffd6d6',chance:'#e5d6ff',fate:'#ffe0f0',bank:'#d6f2ff',lottery:'#fff4c2',hospital:'#e3f7e6',shop:'#ffe9cf',tax:'#e8e8ee',park:'#d9f7c9',jail:'#d5d9e6'};
+function fit(c,t,w,px){c.font='800 '+px+'px sans-serif';while(c.measureText(t).width>w&&px>7){px--;c.font='800 '+px+'px sans-serif'}}
+function drawBoard(now){
+  var c=ctx;c.clearRect(0,0,B,B);
+  var bg=c.createLinearGradient(0,0,B,B);bg.addColorStop(0,'#fff6dc');bg.addColorStop(1,'#ffe3b0');c.fillStyle=bg;c.fillRect(0,0,B,B);
+  // centre decor
+  var cx0=CS*1.1,cw=CS*5.8;
+  var cg=c.createLinearGradient(0,cx0,0,cx0+cw);cg.addColorStop(0,'#bff0c4');cg.addColorStop(1,'#8fdcb0');c.fillStyle=cg;rr(c,cx0,cx0,cw,cw,CS*.4);c.fill();
+  c.fillStyle='rgba(255,255,255,.35)';for(var i=0;i<14;i++){var px=cx0+((i*53)%100)/100*cw,py=cx0+((i*37+11)%100)/100*cw;c.beginPath();c.arc(px,py,CS*(.08+(i%3)*.05),0,7);c.fill()}
+  c.textAlign='center';c.textBaseline='middle';
+  c.font='900 '+CS*.78+'px sans-serif';c.fillStyle='#ff7a5c';c.strokeStyle='#fff';c.lineWidth=CS*.12;c.lineJoin='round';c.strokeText('大富翁',B/2,CS*2.0);c.fillText('大富翁',B/2,CS*2.0);
+  c.font='800 '+CS*.3+'px sans-serif';c.fillStyle='#fff';c.fillText('糖果城',B/2,CS*2.6);
+  // tiles
+  for(i=0;i<28;i++)drawTile(c,i);
+  // dice
+  drawDice(c,now);
+  // tokens (sorted by y)
+  var ps=G.players.filter(function(p){return !p.bankrupt}).slice().sort(function(a,b){return a.dy-b.dy});
+  ps.forEach(function(p){
+    var idx=G.players.indexOf(p),ox=((idx%2)-.5)*CS*.42,oy=(Math.floor(idx/2)-.5)*CS*.1;
+    var x=(p.dx+.5)*CS+ox,y=(p.dy+.5)*CS+CS*.36+oy-(p.hz||0)*CS;
+    if(idx===G.cur&&!G.over){c.strokeStyle=p.color;c.lineWidth=3;c.globalAlpha=.55+.4*Math.sin(now/180);c.beginPath();c.ellipse(x,y+CS*.02,CS*.36,CS*.11,0,0,7);c.stroke();c.globalAlpha=1}
+    chibi(c,x,y,CS*.88,p,(Math.floor(now/2300+idx)%3===0)&&(now%2300<140));
+  });
+  // floats
+  floats=floats.filter(function(f){return now-f.t0<1400});
+  floats.forEach(function(f){var k=(now-f.t0)/1400;c.globalAlpha=1-k*k;c.font='900 '+CS*.38+'px sans-serif';c.lineWidth=4;c.strokeStyle='#fff';c.fillStyle=f.c;var X=(f.x+.5)*CS,Y=(f.y+.5)*CS-CS*.7-k*CS*.9;c.strokeText(f.t,X,Y);c.fillText(f.t,X,Y);c.globalAlpha=1});
+}
+function drawTile(c,i){
+  var t=T[i],q=cell(i),x=q.x*CS+1.5,y=q.y*CS+1.5,w=CS-3,h=CS-3;
+  var own=t.t==='prop'&&t.owner>=0?G.players[t.owner]:null;
+  c.fillStyle='#fffdf6';rr(c,x,y,w,h,CS*.12);c.fill();
+  if(t.t==='prop'){
+    c.fillStyle=own?own.color+'55':'#fffdf6';rr(c,x,y,w,h,CS*.12);c.fill();
+    c.fillStyle=GC[t.g];c.save();rr(c,x,y,w,h,CS*.12);c.clip();c.fillRect(x,y,w,h*.3);c.restore();
+    if(t.lv>0||own){c.font=Math.round(CS*.27)+'px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#000';var s='';for(var k=0;k<Math.max(1,t.lv);k++)s+=t.lv?LVE[t.lv]:'';if(t.lv)c.fillText(t.lv===1?'🏠':t.lv===2?'🏡🏡'.slice(0,2):'🏨',x+w/2,y+h*.15)}
+    c.fillStyle='#4a3320';fit(c,t.n,w-4,Math.round(CS*.24));c.textAlign='center';c.textBaseline='middle';c.fillText(t.n,x+w/2,y+h*.52);
+    c.fillStyle=own?own.color:'#8a6f55';c.font='800 '+Math.round(CS*.2)+'px sans-serif';c.fillText(own?fmt(toll(t)):fmt(t.p),x+w/2,y+h*.82);
+    if(own){c.strokeStyle=own.color;c.lineWidth=3;rr(c,x,y,w,h,CS*.12);c.stroke()}
+  }else{
+    c.fillStyle=TCOL[t.t];rr(c,x,y,w,h,CS*.12);c.fill();
+    c.font=Math.round(CS*.44)+'px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#000';c.fillText(t.e,x+w/2,y+h*.4);
+    c.fillStyle='#4a3320';fit(c,t.n,w-4,Math.round(CS*.22));c.fillText(t.n,x+w/2,y+h*.82);
+  }
+  c.strokeStyle='#e6cf9c';c.lineWidth=1;rr(c,x,y,w,h,CS*.12);if(!(t.t==='prop'&&t.owner>=0))c.stroke();
+}
+var PIPS={1:[[0,0]],2:[[-1,-1],[1,1]],3:[[-1,-1],[0,0],[1,1]],4:[[-1,-1],[1,-1],[-1,1],[1,1]],5:[[-1,-1],[1,-1],[0,0],[-1,1],[1,1]],6:[[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]]};
+function drawDice(c,now){
+  var s=CS*.95;
+  for(var d=0;d<2;d++){
+    var v=dice.v[d],rot=0,dy=0;
+    if(dice.rolling){var k=Math.floor(now/70)+d*3;v=1+((k*7+d*5)%6);rot=Math.sin(now/55+d*2)*.5;dy=-Math.abs(Math.sin(now/110+d))*CS*.4}
+    var X=B/2+(d?1:-1)*CS*.62,Y=B/2+CS*.5+dy;
+    c.save();c.translate(X,Y);c.rotate(rot);
+    c.fillStyle='rgba(0,0,0,.18)';c.beginPath();c.ellipse(0,s*.55-dy*.2,s*.42,s*.1,0,0,7);c.fill();
+    c.fillStyle='#fff';c.strokeStyle='#e0b0a0';c.lineWidth=2;rr(c,-s/2,-s/2,s,s,s*.2);c.fill();c.stroke();
+    c.fillStyle='#ee4a3a';PIPS[v].forEach(function(p){c.beginPath();c.arc(p[0]*s*.26,p[1]*s*.26,s*.085,0,7);c.fill()});
+    c.restore();
+  }
+}
+function frame(now){
+  if(G){
+    for(var i=anims.length-1;i>=0;i--){var a=anims[i],k=Math.min(1,(now-a.t0)/a.d);a.fn(k);if(k>=1){anims.splice(i,1);a.res()}}
+    if(!turbo)drawBoard(now);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- game logic ---------- */
+function newGame(humanCh,nAI){
+  var order=[humanCh];for(var i=0;i<4&&order.length<1+nAI;i++)if(i!==humanCh)order.push(i);
+  G={players:[],cur:0,round:1,over:false,log:[],auto:false,rollWait:null,pendingModal:null,limit:40};
+  order.forEach(function(ci,idx){var ch=CH[ci];G.players.push({id:idx,ci:ci,name:ch.n,hair:ch.hair,style:ch.style,outfit:ch.outfit,color:ch.color,res:ch.res,human:idx===0,money:10000,pos:0,skip:0,jail:false,items:[],dx:0,dy:0,hz:0,bankrupt:false,force:0,shield:0})});
+  T.forEach(function(t){if(t.t==='prop'){t.owner=-1;t.lv=0}});
+  $('bAuto').textContent='🤖托管';
+  $('players').innerHTML='';
+  log('游戏开始！你是 '+G.players[0].name+'，先到先得，破产出局~');
+  updateUI();setRoll(false);
+  gameLoop();
+}
+function alive(){return G.players.filter(function(p){return !p.bankrupt})}
+async function gameLoop(){
+  var g=G;
+  while(!g.over&&g===G){
+    for(var i=0;i<g.players.length;i++){
+      var p=g.players[i];if(p.bankrupt)continue;
+      g.cur=i;updateUI();
+      await takeTurn(p);
+      if(g!==G)return;
+      if(alive().length<=1){return finish()}
+    }
+    g.round++;updateUI();
+    if(g.round>g.limit){return finish(true)}
+  }
+}
+async function finish(byLimit){
+  G.over=true;setRoll(false);
+  var rank=G.players.slice().sort(function(a,b){return (b.bankrupt?-1:0)-(a.bankrupt?-1:0)||worth(b)-worth(a)});
+  var w=rank[0];G.winner=w;updateUI();
+  var hw=w.human;var wins=parseInt(LS.g('dfw_wins')||'0')+(hw?1:0),games=parseInt(LS.g('dfw_games')||'0')+1;LS.s('dfw_wins',wins);LS.s('dfw_games',games);
+  var body=(byLimit?'已达回合上限，按总资产排名：<br>':'其他玩家全部破产！<br>')+rank.map(function(p,i){return (i+1)+'. '+p.name+(p.human?'(你)':'')+' '+(p.bankrupt?'破产':fmt(worth(p)))}).join('<br>')+'<br><span style="font-size:12px;opacity:.7">累计战绩：'+wins+' 胜 / '+games+' 局</span>';
+  log('🎉 '+w.name+' 获胜！');
+  await ask(hw?'🎉 你赢啦！':w.name+' 获胜','🏆',body,[{t:'再来一局',v:1}]);
+  showSetup();
+}
+function setRoll(on,txt){var b=$('bRoll');b.disabled=!on;b.textContent=txt||'🎲 掷骰子'}
+function waitRoll(p){
+  if(G.auto)return Promise.resolve();
+  return new Promise(function(res){
+    G.rollWait=res;setRoll(true);
+  });
+}
+$('bRoll').onclick=function(){if(G&&G.rollWait){var r=G.rollWait;G.rollWait=null;setRoll(false);r('roll')}};
+$('bAuto').onclick=function(){if(!G)return;G.auto=!G.auto;$('bAuto').textContent=G.auto?'✋手动':'🤖托管';if(G.auto&&G.rollWait){var r=G.rollWait;G.rollWait=null;setRoll(false);r('roll')}};
+$('bItem').onclick=function(){if(!G||!G.rollWait)return;var p=G.players[G.cur];if(!p.human)return;useItemMenu(p)};
+async function useItemMenu(p){
+  var m=$('mbox');m.innerHTML='<h2>🎒 我的道具</h2>';
+  if(!p.items.length){var e=document.createElement('p');e.textContent='还没有道具，去道具店(🛍️)买或抽卡获得吧~';m.appendChild(e)}
+  var holder=document.createElement('div');m.appendChild(holder);
+  var done=new Promise(function(res){
+    p.items.forEach(function(k,idx){
+      var it=ITEMS[k],r=document.createElement('div');r.className='row';r.innerHTML='<span class="e">'+it.e+'</span><span class="t"><b>'+it.n+'</b><br>'+it.d+'</span>';
+      if(k==='dice'||k==='rob'||k==='upg'){var b=document.createElement('button');b.className='btn';b.textContent='使用';b.onclick=function(){$('modal').classList.add('hide');res(idx)};r.appendChild(b)}
+      holder.appendChild(r)});
+    var c=document.createElement('button');c.className='btn gy';c.textContent='关闭';c.style.width='100%';c.onclick=function(){$('modal').classList.add('hide');res(-1)};m.appendChild(c);
+    $('modal').classList.remove('hide');
+  });
+  var idx=await done;if(idx<0)return;
+  await applyItem(p,idx);
+}
+async function applyItem(p,idx){
+  var k=p.items[idx];
+  if(k==='dice'){
+    var v;
+    if(humanCtl(p)){var m=$('mbox');m.innerHTML='<h2>🎲 遥控骰</h2><p>选择本次前进的步数</p>';var g=document.createElement('div');g.className='num';m.appendChild(g);
+      v=await new Promise(function(res){for(var n=2;n<=12;n++)(function(n){var b=document.createElement('button');b.className='btn';b.textContent=n;b.onclick=function(){$('modal').classList.add('hide');res(n)};g.appendChild(b)})(n);$('modal').classList.remove('hide')})}
+    else v=aiPickSteps(p);
+    p.force=v;p.items.splice(idx,1);log(p.name+' 使用遥控骰：'+v+' 步');updateUI();
+  }else if(k==='rob'){
+    var vs=alive().filter(function(q){return q!==p&&q.money>0});if(!vs.length)return;
+    var t=vs.sort(function(a,b){return b.money-a.money})[0],amt=Math.min(800,t.money);t.money-=amt;p.money+=amt;p.items.splice(idx,1);floatText(p,'+'+amt,'#2fa24a');floatText(t,'-'+amt);log(p.name+' 抢了 '+t.name+' '+fmt(amt));updateUI();
+    if(humanCtl(p)||(t.human&&!G.auto))await ask('💰 抢钱卡','😈',p.name+' 抢走了 '+t.name+' '+fmt(amt),[{t:'好的',v:1}]);else await sleep(500);
+  }else if(k==='upg'){
+    var ls=props(p).filter(function(t){return t.lv<3});if(!ls.length){if(humanCtl(p))await ask('升级券','🤔','你还没有可升级的地产',[{t:'好的',v:1}]);return}
+    var t2;
+    if(humanCtl(p)){var m2=$('mbox');m2.innerHTML='<h2>⬆️ 选择要升级的地产</h2>';t2=await new Promise(function(res){ls.forEach(function(t){var r=document.createElement('div');r.className='row';r.innerHTML='<span class="e">'+LVE[t.lv]+'</span><span class="t"><b>'+t.n+'</b><br>'+LVN[t.lv]+' → '+LVN[t.lv+1]+'</span>';var b=document.createElement('button');b.className='btn';b.textContent='升级';b.onclick=function(){$('modal').classList.add('hide');res(t)};r.appendChild(b);m2.appendChild(r)});var c=document.createElement('button');c.className='btn gy';c.textContent='取消';c.style.width='100%';c.onclick=function(){$('modal').classList.add('hide');res(null)};m2.appendChild(c);$('modal').classList.remove('hide')})}
+    else t2=ls.sort(function(a,b){return b.p-a.p})[0];
+    if(!t2)return;t2.lv++;p.items.splice(idx,1);log(p.name+' 用升级券升级了 '+t2.n);floatText(p,'⬆️'+LVN[t2.lv]);updateUI();
+  }
+}
+function aiPickSteps(p){
+  var best=7,bs=-1e9;
+  for(var n=2;n<=12;n++){var i=(p.pos+n)%28,t=T[i],sc=0;
+    if(t.t==='prop'){if(t.owner<0&&p.money-t.p>800)sc=t.p/100;else if(t.owner===p.id&&t.lv<3)sc=t.p/200;else if(t.owner>=0&&t.owner!==p.id)sc=-toll(t)/80}
+    else if(t.t==='jail')sc=-30;else if(t.t==='hospital'||t.t==='tax')sc=-8;else if(t.t==='bank')sc=8;else if(t.t==='park')sc=3;
+    if(p.pos+n>=28)sc+=20;
+    if(sc>bs){bs=sc;best=n}}
+  return best;
+}
+async function aiItems(p){
+  // use rob / upg / dice heuristically
+  var i;
+  if((i=p.items.indexOf('upg'))>=0&&props(p).some(function(t){return t.lv<3}))await applyItem(p,i);
+  if((i=p.items.indexOf('rob'))>=0&&alive().some(function(q){return q!==p&&q.money>2500}))await applyItem(p,i);
+  if((i=p.items.indexOf('dice'))>=0&&Math.random()<.7)await applyItem(p,i);
+}
+async function takeTurn(p){
+  var g=G;
+  if(p.skip>0){
+    var fi=p.items.indexOf('free');
+    if(fi>=0){p.items.splice(fi,1);p.skip=0;log(p.name+' 使用出狱卡！');floatText(p,'🔓');await sleep(500)}
+    else{p.skip--;log(p.name+(p.jail?' 在监狱里':' 在医院里')+'休息…');floatText(p,'💤','#666');updateUI();await banner(p.name+(p.jail?' 蹲监狱 ⛓':' 住院中 🏥'),900);if(p.skip===0)p.jail=false;return}
+  }
+  var extra=0,again=false;
+  do{
+    again=false;
+    if(humanCtl(p)){
+      await banner('轮到你了！',700);
+      await waitRoll(p);
+      if(g!==G)return;
+    }else{
+      await banner(p.name+' 的回合',650);
+      await aiItems(p);
+    }
+    var ab=await rollDice(p);
+    await moveSteps(p,ab[0]+ab[1],1);
+    await landOn(p,0);
+    updateUI();
+    if(p.bankrupt)break;
+    if(ab[0]===ab[1]&&p.skip===0&&extra<1&&!G.over){again=true;extra++;await banner('双骰同点！再掷一次 🎉',800)}
+  }while(again);
+}
+async function rollDice(p){
+  var a,b;
+  if(p.force){var tot=p.force;p.force=0;var lo=Math.max(1,tot-6),hi=Math.min(6,tot-1);a=lo+rnd(hi-lo+1);b=tot-a}
+  else{a=1+rnd(6);b=1+rnd(6)}
+  dice.rolling=true;
+  await sleep(900);
+  dice.rolling=false;dice.v=[a,b];
+  log(p.name+' 掷出 '+a+' + '+b+' = '+(a+b));
+  await sleep(350);
+  return [a,b];
+}
+async function hop(p,to){
+  var from=cell(p.pos),tc=cell(to);
+  await tween(210,function(k){p.dx=from.x+(tc.x-from.x)*k;p.dy=from.y+(tc.y-from.y)*k;p.hz=Math.sin(Math.PI*k)*.55});
+  p.hz=0;p.pos=to;
+}
+async function moveSteps(p,n,dir){
+  for(var i=0;i<n;i++){
+    var nx=(p.pos+dir+28)%28;
+    await hop(p,nx);
+    if(dir>0&&nx===0){p.money+=1000;floatText(p,'+1000','#2fa24a');log(p.name+' 经过起点，奖金 ¥1000');updateUI()}
+  }
+}
+async function teleport(p,to){
+  var tc=cell(to);
+  await tween(300,function(k){p.hz=Math.sin(Math.PI*k)*1.4;if(k>.5){p.dx=tc.x;p.dy=tc.y}});
+  p.hz=0;p.dx=tc.x;p.dy=tc.y;p.pos=to;
+}
+async function pay(p,amt,to){
+  // returns actual paid
+  p.money-=amt;var paid=amt;
+  while(p.money<0){
+    var ls=props(p);if(!ls.length)break;
+    ls.sort(function(a,b){return (b.p+b.lv*cost(b))-(a.p+a.lv*cost(a))});
+    var t=ls[ls.length-1];var v=Math.round((t.p+t.lv*cost(t))*.6);
+    p.money+=v;t.owner=-1;t.lv=0;log(p.name+' 变卖 '+t.n+' 得 '+fmt(v));floatText(p,'变卖 '+t.n,'#888');
+  }
+  if(p.money<0){paid=amt+p.money;p.money=0;
+    p.bankrupt=true;props(p).forEach(function(t){t.owner=-1;t.lv=0});
+    log('💥 '+p.name+' 破产出局！');updateUI();
+    if(to)to.money+=paid;
+    await banner('💥 '+p.name+' 破产了！',1200);
+    return paid}
+  if(to)to.money+=paid;
+  updateUI();return paid;
+}
+function drawItem(){return IK[rnd(IK.length)]}
+function giveItem(p,k){if(p.items.length<5){p.items.push(k);return true}return false}
+var CHANCE=[
+ {e:'👛',t:'捡到钱包，获得 ¥1000',f:async function(p){p.money+=1000;floatText(p,'+1000','#2fa24a')}},
+ {e:'🚀',t:'火箭加速！前进 3 格',f:async function(p,d){await moveSteps(p,3,1);return 'land'}},
+ {e:'🎁',t:'回到起点领奖金 ¥1500',f:async function(p){await teleport(p,0);p.money+=1500;floatText(p,'+1500','#2fa24a')}},
+ {e:'🎰',t:'抽奖中大奖，获得 ¥1500',f:async function(p){p.money+=1500;floatText(p,'+1500','#2fa24a')}},
+ {e:'🃏',t:'获得一张随机道具卡',f:async function(p){var k=drawItem();giveItem(p,k);floatText(p,ITEMS[k].e+ITEMS[k].n,'#2f7fe8')}},
+ {e:'🩺',t:'去医院体检，休息一回合',f:async function(p){await teleport(p,7);p.skip=1;p.jail=false}},
+ {e:'⏪',t:'路线封闭，后退 2 格',f:async function(p){await moveSteps(p,2,-1);return 'land'}},
+ {e:'🍜',t:'请朋友吃饭，花费 ¥600',f:async function(p){floatText(p,'-600');await pay(p,600)}}
+];
+var FATE=[
+ {e:'🎂',t:'生日派对！每位玩家送你 ¥300',f:async function(p){alive().forEach(function(q){if(q!==p){var a=Math.min(300,q.money);q.money-=a;p.money+=a}});floatText(p,'+红包','#2fa24a')}},
+ {e:'🚓',t:'交通罚单，缴纳 ¥500',f:async function(p){floatText(p,'-500');await pay(p,500)}},
+ {e:'🧋',t:'请大家喝奶茶，每人 ¥200',f:async function(p){for(var i=0;i<G.players.length;i++){var q=G.players[i];if(q!==p&&!q.bankrupt&&!p.bankrupt)await pay(p,200,q)}}},
+ {e:'🏗️',t:'政府补贴：免费升级一处地产',f:async function(p){var ls=props(p).filter(function(t){return t.lv<3});if(ls.length){var t=ls.sort(function(a,b){return b.p-a.p})[0];t.lv++;floatText(p,'⬆️'+t.n,'#2f7fe8')}else{p.money+=800;floatText(p,'+800','#2fa24a')}}},
+ {e:'🦹',t:'被小偷光顾，损失 ¥800',f:async function(p){floatText(p,'-800');await pay(p,800)}},
+ {e:'📈',t:'股票大涨，获得 ¥2000',f:async function(p){p.money+=2000;floatText(p,'+2000','#2fa24a')}},
+ {e:'🚨',t:'误闯禁区，进监狱！',f:async function(p){await goJail(p)}},
+ {e:'🛡️',t:'好心人送你一张免费通行卡',f:async function(p){giveItem(p,'shield');floatText(p,'🛡️','#2f7fe8')}}
+];
+async function goJail(p){await teleport(p,21);p.skip=2;p.jail=true}
+async function drawCardFlow(p,deck,title,depth){
+  var c=deck[rnd(deck.length)];
+  log(p.name+' 抽到：'+c.t);
+  if(humanCtl(p))await ask(title,c.e,c.t,[{t:'确定',v:1}]);else await banner(c.e+' '+p.name+'：'+c.t,1500);
+  var r=await c.f(p);updateUI();
+  if(r==='land'&&!p.bankrupt&&depth<2)await landOn(p,depth+1);
+}
+async function landOn(p,depth){
+  var t=T[p.pos];
+  if(t.t==='prop')return landProp(p,t);
+  if(t.t==='start'){return}
+  if(t.t==='chance')return drawCardFlow(p,CHANCE,'❓ 机会',depth);
+  if(t.t==='fate')return drawCardFlow(p,FATE,'🎴 命运',depth);
+  if(t.t==='bank'){var a=Math.min(1000,Math.floor(p.money*.1/10)*10);p.money+=a;floatText(p,'+'+a+' 利息','#2fa24a');log(p.name+' 银行利息 '+fmt(a));updateUI();
+    if(humanCtl(p))await ask('🏦 银行','💵','存款利息：现金的 10%（最高 ¥1000）<br>你领取了 '+fmt(a),[{t:'收下',v:1}]);else await banner('🏦 '+p.name+' 领取利息 '+fmt(a),900);return}
+  if(t.t==='lottery'){
+    var buy;
+    if(humanCtl(p)){buy=await ask('🎫 彩票站','🎫','花 ¥500 买一张刮刮乐？<br>可能中 ¥800 / ¥2000 / ¥5000 / ¥10000',[{t:'买！',v:true},{t:'不了',v:false,cls:'gy'}])}
+    else buy=p.money>3500;
+    if(buy&&p.money>=500){p.money-=500;var r=Math.random(),w=r<.5?0:r<.75?800:r<.9?2000:r<.98?5000:10000;p.money+=w;floatText(p,w?'+'+w:'谢谢参与',w?'#2fa24a':'#888');log(p.name+' 刮彩票：'+(w?'中奖 '+fmt(w):'没中'));updateUI();
+      if(humanCtl(p))await ask(w?'🎉 中奖啦！':'😅 没中','🎫',w?'奖金 '+fmt(w):'谢谢参与，下次再来',[{t:'好的',v:1}]);else await banner('🎫 '+p.name+(w?' 中了 '+fmt(w):' 没中奖'),900)}
+    return}
+  if(t.t==='hospital'){p.skip=1;p.jail=false;var f=Math.min(300,p.money);log(p.name+' 住院，医药费 ¥300');floatText(p,'-300');await pay(p,300);
+    if(humanCtl(p))await ask('🏥 医院','🤒','住院休息一回合，医药费 ¥300',[{t:'好吧',v:1}]);else await banner('🏥 '+p.name+' 住院一回合',900);return}
+  if(t.t==='jail'){p.skip=2;p.jail=true;log(p.name+' 进了监狱 ⛓');
+    if(humanCtl(p))await ask('🚔 监狱','⛓️','进监狱！休息两回合（有出狱卡可立即离开）',[{t:'唉…',v:1}]);else await banner('🚔 '+p.name+' 进监狱了',900);return}
+  if(t.t==='park'){p.money+=300;floatText(p,'+300','#2fa24a');log(p.name+' 公园游玩，领补助 ¥300');updateUI();await sleep(500);return}
+  if(t.t==='tax'){var tx=Math.max(300,Math.min(1500,Math.floor(p.money*.08/10)*10));log(p.name+' 缴税 '+fmt(tx));floatText(p,'-'+tx);
+    if(humanCtl(p))await ask('🧾 税务局','🧾','缴纳资产税：现金的 8%（¥300~1500）<br>你需缴纳 '+fmt(tx),[{t:'缴税',v:1}]);else await banner('🧾 '+p.name+' 缴税 '+fmt(tx),900);
+    await pay(p,tx);return}
+  if(t.t==='shop')return shopFlow(p);
+}
+async function shopFlow(p){
+  var stock=IK.slice().sort(function(){return Math.random()-.5}).slice(0,3);
+  if(humanCtl(p)){
+    var m=$('mbox');m.innerHTML='<h2>🛍️ 道具店</h2><p style="margin:2px 0 8px">你有 '+fmt(p.money)+'，最多持有 5 张</p>';
+    var list=document.createElement('div');m.appendChild(list);
+    await new Promise(function(res){
+      stock.forEach(function(k){var it=ITEMS[k],r=document.createElement('div');r.className='row';r.innerHTML='<span class="e">'+it.e+'</span><span class="t"><b>'+it.n+'</b><br>'+it.d+'</span>';
+        var b=document.createElement('button');b.className='btn';b.textContent=fmt(it.price);b.onclick=function(){if(p.money>=it.price&&p.items.length<5){p.money-=it.price;giveItem(p,k);b.textContent='已买';b.disabled=true;updateUI();log(p.name+' 买了 '+it.n)}};r.appendChild(b);list.appendChild(r)});
+      var c=document.createElement('button');c.className='btn gy';c.textContent='离开';c.style.width='100%';c.onclick=function(){$('modal').classList.add('hide');res()};m.appendChild(c);$('modal').classList.remove('hide')});
+  }else{
+    var did=false;
+    stock.forEach(function(k){var it=ITEMS[k];if(p.money-it.price>p.res+1500&&p.items.length<4&&Math.random()<.6){p.money-=it.price;giveItem(p,k);log(p.name+' 买了 '+it.n);did=true}});
+    await banner('🛍️ '+p.name+(did?' 买了道具':' 逛了逛'),800);updateUI();
+  }
+}
+async function landProp(p,t){
+  if(t.owner<0){
+    var buy;
+    if(p.money<t.p){if(humanCtl(p))await ask(t.n,'💸','现金不足，买不起 '+fmt(t.p),[{t:'好吧',v:1}]);return}
+    if(humanCtl(p))buy=await ask(t.n,'🏞️','空地！购买价 '+fmt(t.p)+'<br>空地过路费 '+fmt(Math.round(t.p*RATE[0]/10)*10)+'，盖到大厦可达 '+fmt(Math.round(t.p*RATE[3]/10)*10),[{t:'购买 '+fmt(t.p),v:true},{t:'放弃',v:false,cls:'gy'}]);
+    else buy=p.money-t.p>=p.res||(Math.random()<.35&&p.money-t.p>300);
+    if(buy){p.money-=t.p;t.owner=p.id;t.lv=0;floatText(p,'-'+t.p);log(p.name+' 购买了 '+t.n);updateUI();await sleep(400)}
+    return;
+  }
+  if(t.owner===p.id){
+    if(t.lv>=3){if(humanCtl(p))await banner('🏨 已是大厦！',600);return}
+    var c=cost(t);if(p.money<c){return}
+    var up;
+    if(humanCtl(p))up=await ask(t.n,LVE[t.lv+1],'你的地产（'+LVN[t.lv]+'）<br>升级为 '+LVN[t.lv+1]+' 需要 '+fmt(c)+'<br>升级后过路费 '+fmt(Math.round(t.p*RATE[t.lv+1]/10)*10),[{t:'升级 '+fmt(c),v:true},{t:'不了',v:false,cls:'gy'}]);
+    else up=p.money-c>=p.res;
+    if(up){p.money-=c;t.lv++;floatText(p,'⬆️ '+LVN[t.lv]);log(p.name+' 把 '+t.n+' 升级为'+LVN[t.lv]);updateUI();await sleep(400)}
+    return;
+  }
+  var o=G.players[t.owner];
+  if(o.bankrupt)return;
+  if(o.skip>0){log(o.name+' 不在家，免过路费');await banner('🏠 '+o.name+' '+(o.jail?'在监狱':'在医院')+'，免过路费！',900);return}
+  var tl=toll(t);
+  var si=p.items.indexOf('shield');
+  if(si>=0&&tl>=300){p.items.splice(si,1);log(p.name+' 使用免费通行卡');floatText(p,'🛡️免费','#2f7fe8');await banner('🛡️ '+p.name+' 免费通行！',900);updateUI();return}
+  log(p.name+' 付给 '+o.name+' 过路费 '+fmt(tl));
+  floatText(p,'-'+tl);floatText(o,'+'+tl,'#2fa24a');
+  if(humanCtl(p)||(o.human&&!G.auto))await ask('💸 过路费','🏠',t.n+' 属于 '+o.name+'（'+LVN[t.lv]+(mono(t)?'，垄断×1.5':'')+'）<br>'+p.name+' 需支付 '+fmt(tl),[{t:'支付',v:1}]);
+  else await banner('💸 '+p.name+' → '+o.name+' '+fmt(tl),900);
+  await pay(p,tl,o);
+}
+
+/* ---------- setup screen ---------- */
+var selCh=0,selAI=2;
+function showSetup(){
+  G=G&&G.over?G:G;
+  var m=$('mbox'),wins=LS.g('dfw_wins')||'0',games=LS.g('dfw_games')||'0';
+  m.innerHTML='<h2 style="font-size:28px;color:#ee4a3a">大富翁 · 糖果城</h2><p style="margin:0 0 4px;font-size:13px">掷骰子、买地盖楼、收过路费，把对手全部逼到破产！</p><div style="font-size:13px;font-weight:800">选择你的角色</div><div class="chs" id="chs"></div><div style="font-size:13px;font-weight:800">电脑对手数量</div><div class="seg" id="seg"></div><div class="bs"><button class="btn" id="go" style="width:100%">开始游戏</button></div><p style="margin:10px 0 0;font-size:11px;opacity:.65;line-height:1.5">规则：经过起点 +¥1000；双骰同点再掷一次；买地后可原地升级（空地→小屋→洋房→大厦）；同色两块地同属一人过路费×1.5；道具店可买道具；破产会自动变卖地产；坚持到最后或 40 回合后总资产最多者获胜。<br>战绩 '+wins+' 胜 / '+games+' 局</p>';
+  var chs=$('chs');
+  CH.forEach(function(ch,i){var d=document.createElement('div');d.className='chc'+(i===selCh?' sel':'');d.innerHTML='<canvas></canvas>'+ch.n;avatar(d.firstChild,ch,64);d.onclick=function(){selCh=i;Array.prototype.forEach.call(chs.children,function(x,j){x.className='chc'+(j===i?' sel':'')})};chs.appendChild(d)});
+  var seg=$('seg');[1,2,3].forEach(function(n){var d=document.createElement('div');d.className='chc'+(n===selAI?' sel':'');d.textContent=n+' 个';d.onclick=function(){selAI=n;Array.prototype.forEach.call(seg.children,function(x,j){x.className='chc'+(j+1===n?' sel':'')})};seg.appendChild(d)});
+  $('go').onclick=function(){$('modal').classList.add('hide');newGame(selCh,selAI)};
+  $('modal').classList.remove('hide');
+}
+window.__g={start:function(c,n){$('modal').classList.add('hide');newGame(c,n)},get G(){return G},setTurbo:function(b){turbo=b},setAuto:function(b){G.auto=b;$('bAuto').textContent=b?'✋手动':'🤖托管';if(b&&G.rollWait){var r=G.rollWait;G.rollWait=null;setRoll(false);r('roll')}},speed:function(v){SP.v=v},T:T};
+layout();
+G={players:[],cur:0,round:1,log:[],over:true};
+requestAnimationFrame(function f0(now){requestAnimationFrame(frame)});
+showSetup();
+})();
+</script></body></html>
